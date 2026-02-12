@@ -5,10 +5,15 @@ import { motion } from "framer-motion";
 import { Theme, themes } from "@/types";
 import ThemeSelector from "./ThemeSelector";
 import { validatePageData } from "@/lib/profanity";
-import { createValentinePage } from "@/lib/supabase";
+import { createValentinePage, normalizeName } from "@/lib/supabase";
 
 interface PageFormProps {
-  onSuccess: (pageId: string, name: string, message: string) => void;
+  onSuccess: (
+    pageId: string,
+    name: string,
+    message: string,
+    nameSlug: string,
+  ) => void;
 }
 
 export default function PageForm({ onSuccess }: PageFormProps) {
@@ -29,14 +34,26 @@ export default function PageForm({ onSuccess }: PageFormProps) {
       return;
     }
 
+    // Check if name slug is valid
+    const nameSlug = normalizeName(name);
+    if (nameSlug.length < 2) {
+      setError("Name must be at least 2 characters");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const page = await createValentinePage(name, message, theme);
-      onSuccess(page.id, name, message);
-    } catch (err) {
+      onSuccess(page.id, name, message, page.name_slug);
+    } catch (err: any) {
       console.error("Error creating page:", err);
-      setError("Failed to create page. Please try again.");
+      // Provide more helpful error messages
+      if (err.message && err.message.includes("duplicate key")) {
+        setError("This name is already taken. Please try a different name!");
+      } else {
+        setError("Failed to create page. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -44,6 +61,9 @@ export default function PageForm({ onSuccess }: PageFormProps) {
 
   const characterCount = message.length;
   const isOverLimit = characterCount > 300;
+
+  // Preview the normalized name
+  const previewSlug = normalizeName(name);
 
   return (
     <motion.div
@@ -88,6 +108,14 @@ export default function PageForm({ onSuccess }: PageFormProps) {
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-pink-400 focus:ring-4 focus:ring-pink-100 transition-all outline-none text-lg"
               disabled={loading}
             />
+            {name && (
+              <p className="text-sm text-gray-400 mt-1">
+                Your link will be:{" "}
+                <span className="text-pink-500 font-mono">
+                  /p/{previewSlug || "your-name"}
+                </span>
+              </p>
+            )}
           </div>
 
           {/* Message Input */}

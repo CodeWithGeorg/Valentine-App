@@ -26,6 +26,7 @@ function useFloatingHearts(count: number) {
 
 export default function Home() {
   const [creatorName, setCreatorName] = useState<string>("");
+  const [creatorNameSlug, setCreatorNameSlug] = useState<string>("");
   const [creatorMessage, setCreatorMessage] = useState<string>("");
   const [origin, setOrigin] = useState<string>("");
 
@@ -34,8 +35,14 @@ export default function Home() {
     setOrigin(window.location.origin);
   }, []);
 
-  const handleSuccess = (pageId: string, name: string, message: string) => {
+  const handleSuccess = (
+    pageId: string,
+    name: string,
+    message: string,
+    nameSlug: string,
+  ) => {
     setCreatorName(name);
+    setCreatorNameSlug(nameSlug || name);
     setCreatorMessage(message);
 
     // Scroll to share section
@@ -49,11 +56,11 @@ export default function Home() {
   // Check if a page has been created
   const hasCreatedPage = creatorName !== "" && origin !== "";
 
-  // Build share URLs using the creator's name directly
-  const shareUrl = creatorName && origin ? `${origin}/p/${creatorName}` : "";
-
+  // Build share URLs using the normalized name slug
+  const shareUrl =
+    creatorNameSlug && origin ? `${origin}/p/${creatorNameSlug}` : "";
   const adminUrl =
-    creatorName && origin ? `${origin}/admin/${creatorName}` : "";
+    creatorNameSlug && origin ? `${origin}/admin/${creatorNameSlug}` : "";
 
   const copyToClipboard = async (text: string) => {
     if (!text) return;
@@ -254,7 +261,7 @@ export default function Home() {
                       className="flex flex-col sm:flex-row gap-4 justify-center"
                     >
                       <motion.a
-                        href={`/p/${creatorName}`}
+                        href={`/p/${creatorNameSlug}`}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
@@ -263,7 +270,7 @@ export default function Home() {
                         View Your Page
                       </motion.a>
                       <motion.a
-                        href={`/admin/${creatorName}`}
+                        href={`/admin/${creatorNameSlug}`}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"

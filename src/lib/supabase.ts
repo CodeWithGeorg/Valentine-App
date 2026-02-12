@@ -28,7 +28,18 @@ export const getSupabaseClient = () => {
 // Export the client getter (returns null if not configured)
 export const supabase = getSupabaseClient();
 
-// Database helper functions - now using name as the unique identifier
+// Helper function to normalize names (lowercase, trim whitespace, replace spaces with dashes)
+export function normalizeName(inputName: string): string {
+  return inputName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')  // Replace spaces with dashes
+    .replace(/[^a-z0-9-]/g, '')  // Remove special characters except dashes
+    .replace(/-+/g, '-')  // Replace multiple dashes with single dash
+    .replace(/^-|-$/g, '');  // Remove leading/trailing dashes
+}
+
+// Database helper functions - now using normalized name as the unique identifier
 
 export async function createValentinePage(name: string, message: string, theme: string) {
   const client = getSupabaseClient();
@@ -36,9 +47,20 @@ export async function createValentinePage(name: string, message: string, theme: 
     throw new Error('Supabase is not configured. Please add your environment variables.');
   }
 
+  // Normalize the name for the URL
+  const normalizedName = normalizeName(name);
+  
+  // Also keep the original name for display
+  const displayName = name.trim();
+
   const { data, error } = await (client as any)
     .from('pages')
-    .upsert([{ name, message, theme }], { onConflict: 'name' })
+    .upsert([{ 
+      name: displayName, 
+      name_slug: normalizedName,
+      message, 
+      theme 
+    }], { onConflict: 'name_slug' })
     .select()
     .single();
 
@@ -52,11 +74,26 @@ export async function getValentinePageByName(name: string) {
     throw new Error('Supabase is not configured. Please add your environment variables.');
   }
 
-  const { data, error } = await (client as any)
+  // Try to find by slug first, then by exact name match
+  const normalizedName = normalizeName(name);
+  
+  // First try exact slug match
+  let { data, error } = await (client as any)
     .from('pages')
     .select('*')
-    .eq('name', name)
+    .eq('name_slug', normalizedName)
     .single();
+
+  // If not found, try case-insensitive search
+  if (error || !data) {
+    const result = await (client as any)
+      .from('pages')
+      .select('*')
+      .ilike('name_slug', normalizedName)
+      .single();
+    data = result.data;
+    error = result.error;
+  }
 
   if (error) throw error;
   return data;
@@ -68,10 +105,12 @@ export async function getMessagesByPageName(pageName: string) {
     throw new Error('Supabase is not configured. Please add your environment variables.');
   }
 
+  const normalizedName = normalizeName(pageName);
+  
   const { data, error } = await (client as any)
     .from('messages')
     .select('*')
-    .eq('page_name', pageName)
+    .eq('page_name_slug', normalizedName)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -84,9 +123,11 @@ export async function createAnonymousMessage(pageName: string, content: string) 
     throw new Error('Supabase is not configured. Please add your environment variables.');
   }
 
+  const normalizedName = normalizeName(pageName);
+
   const { data, error } = await (client as any)
     .from('messages')
-    .insert([{ page_name: pageName, content }])
+    .insert([{ page_name_slug: normalizedName, content }])
     .select()
     .single();
 
@@ -114,10 +155,12 @@ export async function deletePage(pageName: string) {
     throw new Error('Supabase is not configured. Please add your environment variables.');
   }
 
+  const normalizedName = normalizeName(pageName);
+  
   const { error } = await (client as any)
     .from('pages')
     .delete()
-    .eq('name', pageName);
+    .eq('name_slug', normalizedName);
 
   if (error) throw error;
 }
