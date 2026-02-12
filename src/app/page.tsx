@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,12 +8,12 @@ import PageForm from "@/components/PageForm";
 
 export default function Home() {
   const [createdPageId, setCreatedPageId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
+  const [origin, setOrigin] = useState<string>("");
 
-  // Handle hydration mismatch
-  useState(() => {
-    setIsClient(true);
-  });
+  // Get the origin on client side to avoid hydration issues
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const handleSuccess = (pageId: string) => {
     setCreatedPageId(pageId);
@@ -26,12 +26,8 @@ export default function Home() {
     }, 100);
   };
 
-  const shareUrl = createdPageId
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${createdPageId}`
-    : "";
-  const adminUrl = createdPageId
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/admin/${createdPageId}`
-    : "";
+  const shareUrl = createdPageId ? `${origin}/p/${createdPageId}` : "";
+  const adminUrl = createdPageId ? `${origin}/admin/${createdPageId}` : "";
 
   const copyToClipboard = async (text: string) => {
     try {

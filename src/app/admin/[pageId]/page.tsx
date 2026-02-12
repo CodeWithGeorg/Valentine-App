@@ -23,8 +23,12 @@ export default function AdminPage({ params }: AdminPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [origin, setOrigin] = useState<string>("");
 
   useEffect(() => {
+    // Set origin on client side
+    setOrigin(window.location.origin);
+
     params.then((resolvedParams) => {
       setPageId(resolvedParams.pageId);
       loadPageData(resolvedParams.pageId);
@@ -73,9 +77,7 @@ export default function AdminPage({ params }: AdminPageProps) {
     }
   };
 
-  const shareUrl = page
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${page.id}`
-    : "";
+  const shareUrl = origin ? `${origin}/p/${pageId}` : "";
 
   const copyToClipboard = async (text: string) => {
     try {
