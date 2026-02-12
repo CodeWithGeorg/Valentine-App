@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
+    "@vercel/analytics": "^1.6.1",
     "date-fns": "^3.0.0",
     "framer-motion": "^10.16.16",
     "next": "14.0.4",
@@ -30,4 +31,3 @@
     "typescript": "^5"
   }
 }
-
