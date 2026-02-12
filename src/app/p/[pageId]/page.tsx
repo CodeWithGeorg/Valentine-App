@@ -7,23 +7,38 @@ import { ValentinePage, themes } from "@/types";
 import { getValentinePage } from "@/lib/supabase";
 import MessageForm from "@/components/MessageForm";
 
+// Generate consistent random values on the client only to prevent hydration mismatch
+function useFloatingHearts(count: number) {
+  const [hearts, setHearts] = useState<
+    Array<{ left: string; duration: string; delay: string }>
+  >([]);
+
+  useEffect(() => {
+    const newHearts = Array.from({ length: count }).map(() => ({
+      left: `${Math.random() * 100}%`,
+      duration: `${15 + Math.random() * 20}s`,
+      delay: `${Math.random() * 10}s`,
+    }));
+    setHearts(newHearts);
+  }, [count]);
+
+  return hearts;
+}
+
 interface PublicPageProps {
-  params: Promise<{ pageId: string }>;
+  params: { pageId: string };
 }
 
 export default function PublicPage({ params }: PublicPageProps) {
-  const [pageId, setPageId] = useState<string>("");
+  const [pageId] = useState<string>(params.pageId);
   const [page, setPage] = useState<ValentinePage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [messageSent, setMessageSent] = useState(false);
 
   useEffect(() => {
-    params.then((resolvedParams) => {
-      setPageId(resolvedParams.pageId);
-      loadPage(resolvedParams.pageId);
-    });
-  }, [params]);
+    loadPage(params.pageId);
+  }, [params.pageId]);
 
   const loadPage = async (id: string) => {
     try {
@@ -92,18 +107,10 @@ export default function PublicPage({ params }: PublicPageProps) {
         className={`fixed inset-0 bg-gradient-to-br ${theme.gradient} opacity-90`}
       />
 
-      {/* Floating hearts background */}
+      {/* Floating hearts background - client-side rendered to prevent hydration mismatch */}
       <div className="hearts-bg">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="heart-float text-2xl"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDuration: `${15 + Math.random() * 20}s`,
-              animationDelay: `${Math.random() * 10}s`,
-            }}
-          >
+        {useFloatingHearts(15).map((style, i) => (
+          <motion.div key={i} className="heart-float text-2xl" style={style}>
             ❤️
           </motion.div>
         ))}

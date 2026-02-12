@@ -1,35 +1,58 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageForm from "@/components/PageForm";
 
+// Generate consistent random values on the client only
+function useFloatingHearts(count: number) {
+  const [hearts, setHearts] = useState<
+    Array<{ left: string; duration: string; delay: string }>
+  >([]);
+
+  useEffect(() => {
+    const newHearts = Array.from({ length: count }).map(() => ({
+      left: `${Math.random() * 100}%`,
+      duration: `${15 + Math.random() * 20}s`,
+      delay: `${Math.random() * 10}s`,
+    }));
+    setHearts(newHearts);
+  }, [count]);
+
+  return hearts;
+}
+
 export default function Home() {
   const [createdPageId, setCreatedPageId] = useState<string | null>(null);
   const [origin, setOrigin] = useState<string>("");
 
-  // Get the origin on client side to avoid hydration issues
+  // Get the real origin once on the client (prevents localhost in production)
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
 
   const handleSuccess = (pageId: string) => {
     setCreatedPageId(pageId);
+
     // Scroll to share section
     setTimeout(() => {
-      const shareSection = document.getElementById("share-section");
-      if (shareSection) {
-        shareSection.scrollIntoView({ behavior: "smooth" });
-      }
+      document.getElementById("share-section")?.scrollIntoView({
+        behavior: "smooth",
+      });
     }, 100);
   };
 
-  const shareUrl = createdPageId ? `${origin}/p/${createdPageId}` : "";
-  const adminUrl = createdPageId ? `${origin}/admin/${createdPageId}` : "";
+  // Build share URLs using the origin we safely fetched
+  const shareUrl =
+    createdPageId && origin ? `${origin}/p/${createdPageId}` : "";
+
+  const adminUrl =
+    createdPageId && origin ? `${origin}/admin/${createdPageId}` : "";
 
   const copyToClipboard = async (text: string) => {
+    if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
       alert("Link copied to clipboard! 📋");
@@ -43,7 +66,6 @@ export default function Home() {
       <Navbar />
 
       <main className="flex-grow pt-20">
-        {/* Hero Section */}
         <section className="py-12 sm:py-20 px-4">
           <div className="max-w-6xl mx-auto">
             <AnimatePresence mode="wait">
@@ -54,6 +76,7 @@ export default function Home() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
+                  {/* Hero + Form + How it Works - unchanged */}
                   <div className="text-center mb-10">
                     <motion.h1
                       initial={{ y: -20, opacity: 0 }}
@@ -76,7 +99,7 @@ export default function Home() {
 
                   <PageForm onSuccess={handleSuccess} />
 
-                  {/* How it Works Section */}
+                  {/* How it Works Section - unchanged */}
                   <motion.div
                     id="how-it-works"
                     initial={{ opacity: 0 }}
@@ -149,7 +172,6 @@ export default function Home() {
                     someone!
                   </p>
 
-                  {/* Share Links */}
                   <div
                     id="share-section"
                     className="max-w-2xl mx-auto space-y-6"
@@ -169,7 +191,7 @@ export default function Home() {
                           type="text"
                           readOnly
                           value={shareUrl}
-                          className="flex-1 px-4 py-3 rounded-xl bg-gray-100 border-2 border-gray-200 text-gray-600"
+                          className="flex-1 px-4 py-3 rounded-xl bg-gray-100 border-2 border-gray-200 text-gray-600 font-mono text-sm"
                         />
                         <motion.button
                           onClick={() => copyToClipboard(shareUrl)}
@@ -203,7 +225,7 @@ export default function Home() {
                           type="text"
                           readOnly
                           value={adminUrl}
-                          className="flex-1 px-4 py-3 rounded-xl bg-white/20 border-2 border-white/30 text-white placeholder-white/70"
+                          className="flex-1 px-4 py-3 rounded-xl bg-white/20 border-2 border-white/30 text-white font-mono text-sm"
                         />
                         <motion.button
                           onClick={() => copyToClipboard(adminUrl)}
@@ -220,7 +242,7 @@ export default function Home() {
                       </p>
                     </motion.div>
 
-                    {/* Action Buttons */}
+                    {/* View Buttons */}
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -247,7 +269,7 @@ export default function Home() {
                       </motion.a>
                     </motion.div>
 
-                    {/* Share Buttons */}
+                    {/* Social Share Buttons - unchanged */}
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -255,7 +277,7 @@ export default function Home() {
                       className="flex justify-center gap-4"
                     >
                       <motion.a
-                        href={`https://wa.me/?text=Check out my Valentine page! ${shareUrl}`}
+                        href={`https://wa.me/?text=Check out my Valentine page! ${encodeURIComponent(shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         whileHover={{ scale: 1.1 }}
@@ -271,6 +293,7 @@ export default function Home() {
                           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                         </svg>
                       </motion.a>
+
                       <motion.a
                         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
@@ -288,6 +311,7 @@ export default function Home() {
                           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                         </svg>
                       </motion.a>
+
                       <motion.a
                         href={`https://twitter.com/intent/tweet?text=Check out my Valentine page!&url=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
@@ -307,7 +331,6 @@ export default function Home() {
                       </motion.a>
                     </motion.div>
 
-                    {/* Create Another Button */}
                     <motion.button
                       onClick={() => setCreatedPageId(null)}
                       whileHover={{ scale: 1.05 }}
@@ -323,18 +346,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Floating Hearts Background */}
+        {/* Floating Hearts Background - client-side rendered to prevent hydration mismatch */}
         <div className="hearts-bg">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="heart-float text-2xl"
-              style={{
-                left: `${Math.random() * 100}%`,
-                animationDuration: `${15 + Math.random() * 20}s`,
-                animationDelay: `${Math.random() * 10}s`,
-              }}
-            >
+          {useFloatingHearts(20).map((style, i) => (
+            <motion.div key={i} className="heart-float text-2xl" style={style}>
               ❤️
             </motion.div>
           ))}
