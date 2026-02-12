@@ -25,7 +25,6 @@ function useFloatingHearts(count: number) {
 }
 
 export default function Home() {
-  const [createdPageId, setCreatedPageId] = useState<string | null>(null);
   const [creatorName, setCreatorName] = useState<string>("");
   const [creatorMessage, setCreatorMessage] = useState<string>("");
   const [origin, setOrigin] = useState<string>("");
@@ -36,7 +35,6 @@ export default function Home() {
   }, []);
 
   const handleSuccess = (pageId: string, name: string, message: string) => {
-    setCreatedPageId(pageId);
     setCreatorName(name);
     setCreatorMessage(message);
 
@@ -48,16 +46,14 @@ export default function Home() {
     }, 100);
   };
 
-  // Build share URLs using the origin we safely fetched
-  const shareUrl =
-    createdPageId && origin
-      ? `${origin}/p/${createdPageId}?name=${encodeURIComponent(creatorName)}`
-      : "";
+  // Check if a page has been created
+  const hasCreatedPage = creatorName !== "" && origin !== "";
+
+  // Build share URLs using the creator's name directly
+  const shareUrl = creatorName && origin ? `${origin}/p/${creatorName}` : "";
 
   const adminUrl =
-    createdPageId && origin
-      ? `${origin}/admin/${createdPageId}?name=${encodeURIComponent(creatorName)}`
-      : "";
+    creatorName && origin ? `${origin}/admin/${creatorName}` : "";
 
   const copyToClipboard = async (text: string) => {
     if (!text) return;
@@ -77,7 +73,7 @@ export default function Home() {
         <section className="py-12 sm:py-20 px-4">
           <div className="max-w-6xl mx-auto">
             <AnimatePresence mode="wait">
-              {!createdPageId ? (
+              {!hasCreatedPage ? (
                 <motion.div
                   key="form"
                   initial={{ opacity: 0 }}
@@ -258,7 +254,7 @@ export default function Home() {
                       className="flex flex-col sm:flex-row gap-4 justify-center"
                     >
                       <motion.a
-                        href={`/p/${createdPageId}?name=${encodeURIComponent(creatorName)}`}
+                        href={`/p/${creatorName}`}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
@@ -267,7 +263,7 @@ export default function Home() {
                         View Your Page
                       </motion.a>
                       <motion.a
-                        href={`/admin/${createdPageId}?name=${encodeURIComponent(creatorName)}`}
+                        href={`/admin/${creatorName}`}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
@@ -340,7 +336,10 @@ export default function Home() {
                     </motion.div>
 
                     <motion.button
-                      onClick={() => setCreatedPageId(null)}
+                      onClick={() => {
+                        setCreatorName("");
+                        setCreatorMessage("");
+                      }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className="text-gray-500 hover:text-pink-500 transition-colors text-sm"

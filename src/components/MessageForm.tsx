@@ -6,11 +6,11 @@ import { createAnonymousMessage } from "@/lib/supabase";
 import { validateMessage, filterProfanity } from "@/lib/profanity";
 
 interface MessageFormProps {
-  pageId: string;
+  pageName: string;
   onSuccess: () => void;
 }
 
-export default function MessageForm({ pageId, onSuccess }: MessageFormProps) {
+export default function MessageForm({ pageName, onSuccess }: MessageFormProps) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function MessageForm({ pageId, onSuccess }: MessageFormProps) {
       // Filter profanity
       const filteredMessage = filterProfanity(message);
 
-      await createAnonymousMessage(pageId, filteredMessage);
+      await createAnonymousMessage(pageName, filteredMessage);
       setSuccess(true);
       setMessage("");
       onSuccess();

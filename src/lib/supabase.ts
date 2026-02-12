@@ -28,7 +28,8 @@ export const getSupabaseClient = () => {
 // Export the client getter (returns null if not configured)
 export const supabase = getSupabaseClient();
 
-// Database helper functions - these will return errors if client is not configured
+// Database helper functions - now using name as the unique identifier
+
 export async function createValentinePage(name: string, message: string, theme: string) {
   const client = getSupabaseClient();
   if (!client) {
@@ -37,7 +38,7 @@ export async function createValentinePage(name: string, message: string, theme: 
 
   const { data, error } = await (client as any)
     .from('pages')
-    .insert([{ name, message, theme }])
+    .upsert([{ name, message, theme }], { onConflict: 'name' })
     .select()
     .single();
 
@@ -45,7 +46,7 @@ export async function createValentinePage(name: string, message: string, theme: 
   return data;
 }
 
-export async function getValentinePage(pageId: string) {
+export async function getValentinePageByName(name: string) {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error('Supabase is not configured. Please add your environment variables.');
@@ -54,14 +55,14 @@ export async function getValentinePage(pageId: string) {
   const { data, error } = await (client as any)
     .from('pages')
     .select('*')
-    .eq('id', pageId)
+    .eq('name', name)
     .single();
 
   if (error) throw error;
   return data;
 }
 
-export async function getMessagesByPage(pageId: string) {
+export async function getMessagesByPageName(pageName: string) {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error('Supabase is not configured. Please add your environment variables.');
@@ -70,14 +71,14 @@ export async function getMessagesByPage(pageId: string) {
   const { data, error } = await (client as any)
     .from('messages')
     .select('*')
-    .eq('page_id', pageId)
+    .eq('page_name', pageName)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data || [];
 }
 
-export async function createAnonymousMessage(pageId: string, content: string) {
+export async function createAnonymousMessage(pageName: string, content: string) {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error('Supabase is not configured. Please add your environment variables.');
@@ -85,7 +86,7 @@ export async function createAnonymousMessage(pageId: string, content: string) {
 
   const { data, error } = await (client as any)
     .from('messages')
-    .insert([{ page_id: pageId, content }])
+    .insert([{ page_name: pageName, content }])
     .select()
     .single();
 
@@ -107,7 +108,7 @@ export async function deleteMessage(messageId: string) {
   if (error) throw error;
 }
 
-export async function deletePage(pageId: string) {
+export async function deletePage(pageName: string) {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error('Supabase is not configured. Please add your environment variables.');
@@ -116,11 +117,10 @@ export async function deletePage(pageId: string) {
   const { error } = await (client as any)
     .from('pages')
     .delete()
-    .eq('id', pageId);
+    .eq('name', pageName);
 
   if (error) throw error;
 }
 
 // Export configuration check function
 export { isSupabaseConfigured };
-

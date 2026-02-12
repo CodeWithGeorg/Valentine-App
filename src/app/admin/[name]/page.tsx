@@ -5,18 +5,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ValentinePage, ValentineMessage, themes } from "@/types";
 import {
-  getValentinePage,
-  getMessagesByPage,
+  getValentinePageByName,
+  getMessagesByPageName,
   deleteMessage,
 } from "@/lib/supabase";
 import MessageCard from "@/components/MessageCard";
 
 interface AdminPageProps {
-  params: { pageId: string };
+  params: Promise<{ name: string }>;
 }
 
 export default function AdminPage({ params }: AdminPageProps) {
-  const [pageId] = useState<string>(params.pageId);
+  const [pageName, setPageName] = useState<string>("");
   const [origin, setOrigin] = useState<string>("");
   const [page, setPage] = useState<ValentinePage | null>(null);
   const [messages, setMessages] = useState<ValentineMessage[]>([]);
@@ -27,16 +27,19 @@ export default function AdminPage({ params }: AdminPageProps) {
 
   // Get the real origin once on the client and load page data
   useEffect(() => {
-    setOrigin(window.location.origin);
-    loadPageData(params.pageId);
-  }, [params.pageId]);
+    params.then((resolvedParams) => {
+      setPageName(resolvedParams.name);
+      setOrigin(window.location.origin);
+      loadPageData(resolvedParams.name);
+    });
+  }, [params]);
 
-  const loadPageData = async (id: string) => {
+  const loadPageData = async (name: string) => {
     setLoading(true);
     try {
-      const pageData = await getValentinePage(id);
+      const pageData = await getValentinePageByName(name);
       setPage(pageData);
-      await loadMessages(id);
+      await loadMessages(name);
     } catch (err) {
       console.error("Error loading page:", err);
       setError("Page not found or access denied 😔");
@@ -45,10 +48,10 @@ export default function AdminPage({ params }: AdminPageProps) {
     }
   };
 
-  const loadMessages = async (id: string) => {
+  const loadMessages = async (name: string) => {
     setMessagesLoading(true);
     try {
-      const messagesData = await getMessagesByPage(id);
+      const messagesData = await getMessagesByPageName(name);
       setMessages(messagesData || []);
     } catch (err) {
       console.error("Error loading messages:", err);
@@ -59,7 +62,7 @@ export default function AdminPage({ params }: AdminPageProps) {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadMessages(pageId);
+    await loadMessages(pageName);
     setTimeout(() => setRefreshing(false), 500);
   };
 
@@ -73,11 +76,8 @@ export default function AdminPage({ params }: AdminPageProps) {
     }
   };
 
-  // Now includes name parameter for personalization
-  const shareUrl =
-    pageId && origin && page
-      ? `${origin}/p/${pageId}?name=${encodeURIComponent(page.name)}`
-      : "";
+  // Share URL using name directly (no pageId needed)
+  const shareUrl = origin && page ? `${origin}/p/${page.name}` : "";
 
   const copyToClipboard = async (text: string) => {
     if (!text) return;
@@ -133,7 +133,7 @@ export default function AdminPage({ params }: AdminPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-purple-200">
-      {/* Header - unchanged */}
+      {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -181,16 +181,47 @@ export default function AdminPage({ params }: AdminPageProps) {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Stats Card - unchanged */}
+        {/* Stats Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl shadow-xl p-6 mb-8"
         >
-          {/* ... stats unchanged ... */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-pink-500">
+                {messages.length}
+              </div>
+              <div className="text-sm text-gray-500">Total Messages</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-500">
+                {
+                  messages.filter((m) => {
+                    const hour = 60 * 60 * 1000;
+                    const day = 24 * hour;
+                    return Date.now() - new Date(m.created_at).getTime() < day;
+                  }).length
+                }
+              </div>
+              <div className="text-sm text-gray-500">Today</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-500">
+                {messages.filter((m) => m.content.length < 50).length}
+              </div>
+              <div className="text-sm text-gray-500">Short & Sweet</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-500">
+                {messages.filter((m) => /[❤️💕💖💗💓]/.test(m.content)).length}
+              </div>
+              <div className="text-sm text-gray-500">With Love ❤️</div>
+            </div>
+          </div>
         </motion.div>
 
-        {/* Your Page Info - now uses the correct shareUrl */}
+        {/* Your Page Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -223,15 +254,33 @@ export default function AdminPage({ params }: AdminPageProps) {
           </p>
         </motion.div>
 
-        {/* Messages Section - unchanged (except the share button below) */}
+        {/* Messages Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          {/* ... messages list unchanged ... */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+              <span className="mr-2">💌</span>
+              Anonymous Messages
+              <span className="ml-2 bg-pink-500 text-white text-sm px-3 py-1 rounded-full">
+                {messages.length}
+              </span>
+            </h2>
+          </div>
 
-          {messages.length === 0 && (
+          {messagesLoading ? (
+            <div className="flex justify-center py-12">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 360] }}
+                transition={{ repeat: Infinity, duration: 1 }}
+                className="text-4xl"
+              >
+                💕
+              </motion.div>
+            </div>
+          ) : messages.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -254,21 +303,61 @@ export default function AdminPage({ params }: AdminPageProps) {
                 Share Your Page
               </motion.button>
             </motion.div>
+          ) : (
+            <div className="space-y-4">
+              <AnimatePresence mode="popLayout">
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <MessageCard
+                      message={message}
+                      onDelete={handleDeleteMessage}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </motion.div>
 
-        {/* Tips Section - unchanged */}
+        {/* Tips Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="mt-12 bg-blue-50 rounded-2xl p-6"
         >
-          {/* ... tips unchanged ... */}
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+            <span className="mr-2">💡</span>
+            Tips to Get More Messages
+          </h3>
+          <ul className="space-y-2 text-gray-600">
+            <li className="flex items-start">
+              <span className="mr-2">1.</span>
+              Share your link on Instagram Stories with a cute sticker!
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">2.</span>
+              Send it directly to your crush with a sweet message 💕
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">3.</span>
+              Post on WhatsApp status for all your friends to see!
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">4.</span>
+              Check back often - new messages arrive in real-time!
+            </li>
+          </ul>
         </motion.div>
       </main>
 
-      {/* Footer - unchanged */}
+      {/* Footer */}
       <footer className="bg-white/50 backdrop-blur-sm py-6 mt-8">
         <div className="max-w-4xl mx-auto px-4 text-center text-gray-500 text-sm">
           <p>Made with 💕 for Valentine's Week {new Date().getFullYear()}</p>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ValentinePage, themes } from "@/types";
-import { getValentinePage } from "@/lib/supabase";
+import { getValentinePageByName } from "@/lib/supabase";
 import MessageForm from "@/components/MessageForm";
 
 // Generate consistent random values on the client only to prevent hydration mismatch
@@ -26,23 +26,23 @@ function useFloatingHearts(count: number) {
 }
 
 interface PublicPageProps {
-  params: { pageId: string };
+  params: { name: string };
 }
 
 export default function PublicPage({ params }: PublicPageProps) {
-  const [pageId] = useState<string>(params.pageId);
+  const [pageName] = useState<string>(params.name);
   const [page, setPage] = useState<ValentinePage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [messageSent, setMessageSent] = useState(false);
 
   useEffect(() => {
-    loadPage(params.pageId);
-  }, [params.pageId]);
+    loadPage(params.name);
+  }, [params.name]);
 
-  const loadPage = async (id: string) => {
+  const loadPage = async (name: string) => {
     try {
-      const pageData = await getValentinePage(id);
+      const pageData = await getValentinePageByName(name);
       setPage(pageData);
     } catch (err) {
       console.error("Error loading page:", err);
@@ -207,7 +207,10 @@ export default function PublicPage({ params }: PublicPageProps) {
 
                 {/* Message Form */}
                 {!messageSent ? (
-                  <MessageForm pageId={page.id} onSuccess={handleMessageSent} />
+                  <MessageForm
+                    pageName={page.name}
+                    onSuccess={handleMessageSent}
+                  />
                 ) : (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}

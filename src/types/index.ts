@@ -1,5 +1,4 @@
 export interface ValentinePage {
-  id: string;
   name: string;
   message: string;
   theme: Theme;
@@ -8,7 +7,7 @@ export interface ValentinePage {
 
 export interface ValentineMessage {
   id: string;
-  page_id: string;
+  page_name: string;
   content: string;
   created_at: string;
 }
