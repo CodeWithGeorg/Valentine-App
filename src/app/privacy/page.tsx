@@ -22,8 +22,7 @@ export default function PrivacyPage() {
 
               <div className="prose prose-pink max-w-none text-gray-600 space-y-6">
                 <p>
-                  <strong>Last updated:</strong>{" "}
-                  {new Date().toLocaleDateString()}
+                  <strong>Last updated:</strong> Feb 12, 2026
                 </p>
 
                 <h2 className="text-xl font-bold text-gray-800">
