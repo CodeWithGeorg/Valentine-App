@@ -7,7 +7,9 @@ import { ValentinePage, themes } from "@/types";
 import { getValentinePageByName } from "@/lib/supabase";
 import MessageForm from "@/components/MessageForm";
 
-// Generate consistent random values on the client only to prevent hydration mismatch
+/* =======================
+   Custom Hook (VALID)
+======================= */
 function useFloatingHearts(count: number) {
   const [hearts, setHearts] = useState<
     Array<{ left: string; duration: string; delay: string }>
@@ -30,37 +32,38 @@ interface PublicPageProps {
 }
 
 export default function PublicPage({ params }: PublicPageProps) {
-  const [pageName] = useState<string>(params.name);
   const [page, setPage] = useState<ValentinePage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [messageSent, setMessageSent] = useState(false);
 
-  useEffect(() => {
-    loadPage(params.name);
-  }, [params.name]);
+  /* ✅ HOOK CALLED ONCE — CORRECT */
+  const hearts = useFloatingHearts(15);
 
-  const loadPage = async (name: string) => {
-    try {
-      const pageData = await getValentinePageByName(name);
-      setPage(pageData);
-    } catch (err) {
-      console.error("Error loading page:", err);
-      setError("Page not found 😔");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const loadPage = async () => {
+      try {
+        const pageData = await getValentinePageByName(params.name);
+        setPage(pageData);
+      } catch (err) {
+        console.error(err);
+        setError("Page not found 😔");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPage();
+  }, [params.name]);
 
   const handleMessageSent = () => {
     setMessageSent(true);
-    // Reset after 5 seconds
     setTimeout(() => setMessageSent(false), 5000);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-red-50 to-pink-200 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-pink-100">
         <motion.div
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
@@ -74,26 +77,8 @@ export default function PublicPage({ params }: PublicPageProps) {
 
   if (error || !page) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-red-50 to-pink-200 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-md"
-        >
-          <div className="text-6xl mb-4">😔</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Oops! Page Not Found
-          </h1>
-          <p className="text-gray-500 mb-6">
-            This Valentine page doesn't exist or has been removed.
-          </p>
-          <Link
-            href="/"
-            className="inline-block bg-gradient-to-r from-pink-500 to-red-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow"
-          >
-            Create Your Own Page 💕
-          </Link>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center bg-pink-100">
+        <p className="text-xl text-gray-700">{error}</p>
       </div>
     );
   }
@@ -101,149 +86,63 @@ export default function PublicPage({ params }: PublicPageProps) {
   const theme = themes[page.theme] || themes["romantic-red"];
 
   return (
-    <div className="min-h-screen">
-      {/* Dynamic background based on theme */}
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background */}
       <div
         className={`fixed inset-0 bg-gradient-to-br ${theme.gradient} opacity-90`}
       />
 
-      {/* Floating hearts background - client-side rendered to prevent hydration mismatch */}
+      {/* Floating Hearts */}
       <div className="hearts-bg">
-        {useFloatingHearts(15).map((style, i) => (
-          <motion.div key={i} className="heart-float text-2xl" style={style}>
+        {hearts.map((style, i) => (
+          <motion.div
+            key={i}
+            className="heart-float text-2xl absolute"
+            style={style}
+          >
             ❤️
           </motion.div>
         ))}
       </div>
 
-      {/* Main Content */}
+      {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Header */}
         <header className="p-4">
-          <Link
-            href="/"
-            className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white hover:bg-white/30 transition-colors"
-          >
-            <span className="text-xl">🏠</span>
-            <span className="font-medium">Create Your Own</span>
+          <Link href="/" className="text-white font-medium">
+            🏠 Create Your Own
           </Link>
         </header>
 
-        {/* Valentine Card */}
         <main className="flex-grow flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30, rotateX: -10 }}
-            animate={{ opacity: 1, y: 0, rotateX: 0 }}
-            transition={{ duration: 0.8, type: "spring" }}
-            className="w-full max-w-2xl"
-          >
-            {/* Envelope effect */}
-            <motion.div
-              initial={{ y: -20 }}
-              animate={{ y: 0 }}
-              className="text-center mb-4"
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full">
+            <div
+              className={`bg-gradient-to-r ${theme.gradient} p-6 text-center text-white`}
             >
-              <motion.div
-                animate={{ y: [-5, 5, -5] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="inline-block text-6xl"
-              >
-                💌
-              </motion.div>
-            </motion.div>
-
-            {/* Main Card */}
-            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
-              {/* Card Header */}
-              <div
-                className={`bg-gradient-to-r ${theme.gradient} p-8 text-center`}
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.3, type: "spring" }}
-                  className="inline-block mb-4"
-                >
-                  <div className="heart w-16 h-16" />
-                </motion.div>
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-3xl sm:text-4xl font-bold text-white mb-2"
-                >
-                  💕 A Valentine Message For You! 💕
-                </motion.h1>
-              </div>
-
-              {/* Card Body */}
-              <div className="p-8">
-                {/* Name */}
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-center mb-6"
-                >
-                  <p className="text-sm text-gray-400 uppercase tracking-wider mb-2">
-                    From
-                  </p>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent">
-                    {page.name}
-                  </h2>
-                </motion.div>
-
-                {/* Message */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="bg-gradient-to-br from-pink-50 to-red-50 rounded-2xl p-6 mb-8"
-                >
-                  <p className="text-lg sm:text-xl text-gray-700 leading-relaxed text-center font-medium italic">
-                    "{page.message}"
-                  </p>
-                </motion.div>
-
-                {/* Message Form */}
-                {!messageSent ? (
-                  <MessageForm
-                    pageName={page.name}
-                    onSuccess={handleMessageSent}
-                  />
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl p-8 text-center"
-                  >
-                    <div className="text-5xl mb-3">🎉</div>
-                    <h3 className="text-xl font-bold text-green-600 mb-2">
-                      Message Sent!
-                    </h3>
-                    <p className="text-gray-600">
-                      Your anonymous message has been delivered! 💕
-                    </p>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Card Footer */}
-              <div className="bg-gray-50 px-8 py-4 text-center">
-                <p className="text-sm text-gray-400">
-                  Made with 💕 by{" "}
-                  <span className="font-medium">{page.name}</span>
-                </p>
-              </div>
+              <h1 className="text-3xl font-bold">
+                💕 A Valentine Message For You 💕
+              </h1>
             </div>
-          </motion.div>
+
+            <div className="p-8 text-center">
+              <h2 className="text-2xl font-bold mb-4">{page.name}</h2>
+              <p className="italic text-lg mb-6">"{page.message}"</p>
+
+              {!messageSent ? (
+                <MessageForm
+                  pageName={page.name}
+                  onSuccess={handleMessageSent}
+                />
+              ) : (
+                <p className="text-green-600 font-bold">
+                  🎉 Message Sent Successfully!
+                </p>
+              )}
+            </div>
+          </div>
         </main>
 
-        {/* Footer */}
-        <footer className="p-4 text-center">
-          <p className="text-white/60 text-sm">
-            Valentine's Week {new Date().getFullYear()} ❤️
-          </p>
+        <footer className="p-4 text-center text-white/70">
+          Valentine’s Week {new Date().getFullYear()} ❤️
         </footer>
       </div>
     </div>

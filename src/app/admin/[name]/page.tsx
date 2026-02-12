@@ -12,7 +12,12 @@ import {
 import MessageCard from "@/components/MessageCard";
 
 interface AdminPageProps {
-  params: Promise<{ name: string }>;
+  params: Promise<{ name: string }> | { name: string };
+}
+
+// Type guard to check if params is a Promise
+function isPromise(obj: any): obj is Promise<{ name: string }> {
+  return obj && typeof obj.then === "function";
 }
 
 export default function AdminPage({ params }: AdminPageProps) {
@@ -27,11 +32,30 @@ export default function AdminPage({ params }: AdminPageProps) {
 
   // Get the real origin once on the client and load page data
   useEffect(() => {
-    params.then((resolvedParams) => {
-      setPageName(resolvedParams.name);
-      setOrigin(window.location.origin);
-      loadPageData(resolvedParams.name);
-    });
+    const initParams = async () => {
+      try {
+        let name: string;
+
+        if (isPromise(params)) {
+          // params is a Promise
+          const resolved = await params;
+          name = resolved.name;
+        } else {
+          // params is already an object
+          name = params.name;
+        }
+
+        setPageName(name);
+        setOrigin(window.location.origin);
+        loadPageData(name);
+      } catch (err) {
+        console.error("Error resolving params:", err);
+        setError("Invalid page parameters");
+        setLoading(false);
+      }
+    };
+
+    initParams();
   }, [params]);
 
   const loadPageData = async (name: string) => {
