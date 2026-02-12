@@ -53,6 +53,7 @@ export async function createValentinePage(name: string, message: string, theme: 
   // Also keep the original name for display
   const displayName = name.trim();
 
+  // Use upsert with name_slug as the unique identifier
   const { data, error } = await (client as any)
     .from('pages')
     .upsert([{ 
@@ -60,11 +61,14 @@ export async function createValentinePage(name: string, message: string, theme: 
       name_slug: normalizedName,
       message, 
       theme 
-    }], { onConflict: 'name_slug' })
+    }], { onConflict: 'name_slug', ignoreDuplicates: true })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase error:", error);
+    throw new Error(error.message || 'Failed to create page');
+  }
   return data;
 }
 
