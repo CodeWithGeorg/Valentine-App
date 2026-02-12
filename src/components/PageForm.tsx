@@ -8,7 +8,7 @@ import { validatePageData } from "@/lib/profanity";
 import { createValentinePage } from "@/lib/supabase";
 
 interface PageFormProps {
-  onSuccess: (pageId: string) => void;
+  onSuccess: (pageId: string, name: string, message: string) => void;
 }
 
 export default function PageForm({ onSuccess }: PageFormProps) {
@@ -33,7 +33,7 @@ export default function PageForm({ onSuccess }: PageFormProps) {
 
     try {
       const page = await createValentinePage(name, message, theme);
-      onSuccess(page.id);
+      onSuccess(page.id, name, message);
     } catch (err) {
       console.error("Error creating page:", err);
       setError("Failed to create page. Please try again.");

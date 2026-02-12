@@ -26,6 +26,8 @@ function useFloatingHearts(count: number) {
 
 export default function Home() {
   const [createdPageId, setCreatedPageId] = useState<string | null>(null);
+  const [creatorName, setCreatorName] = useState<string>("");
+  const [creatorMessage, setCreatorMessage] = useState<string>("");
   const [origin, setOrigin] = useState<string>("");
 
   // Get the real origin once on the client (prevents localhost in production)
@@ -33,8 +35,10 @@ export default function Home() {
     setOrigin(window.location.origin);
   }, []);
 
-  const handleSuccess = (pageId: string) => {
+  const handleSuccess = (pageId: string, name: string, message: string) => {
     setCreatedPageId(pageId);
+    setCreatorName(name);
+    setCreatorMessage(message);
 
     // Scroll to share section
     setTimeout(() => {
@@ -269,7 +273,7 @@ export default function Home() {
                       </motion.a>
                     </motion.div>
 
-                    {/* Social Share Buttons - unchanged */}
+                    {/* Social Share Buttons - now with personalized message */}
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -277,7 +281,7 @@ export default function Home() {
                       className="flex justify-center gap-4"
                     >
                       <motion.a
-                        href={`https://wa.me/?text=Check out my Valentine page! ${encodeURIComponent(shareUrl)}`}
+                        href={`https://wa.me/?text=${encodeURIComponent(`💕 A Valentine Message For You!\n\nFrom: ${creatorName}\n\n"${creatorMessage}"\n\nSend me an anonymous message! 💌\n${shareUrl}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         whileHover={{ scale: 1.1 }}
@@ -295,7 +299,7 @@ export default function Home() {
                       </motion.a>
 
                       <motion.a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(`💕 A Valentine Message For You!\n\nFrom: ${creatorName}\n\n"${creatorMessage}"\n\nSend me an anonymous message! 💌`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         whileHover={{ scale: 1.1 }}
@@ -313,7 +317,7 @@ export default function Home() {
                       </motion.a>
 
                       <motion.a
-                        href={`https://twitter.com/intent/tweet?text=Check out my Valentine page!&url=${encodeURIComponent(shareUrl)}`}
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`💕 A Valentine Message For You!\n\nFrom: ${creatorName}\n\n"${creatorMessage}"\n\nSend me an anonymous message! 💌\n${shareUrl}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         whileHover={{ scale: 1.1 }}
