@@ -73,8 +73,11 @@ export default function AdminPage({ params }: AdminPageProps) {
     }
   };
 
-  // ← FIXED: Now uses the safe origin state (no more localhost fallback)
-  const shareUrl = pageId && origin ? `${origin}/p/${pageId}` : "";
+  // Now includes name parameter for personalization
+  const shareUrl =
+    pageId && origin && page
+      ? `${origin}/p/${pageId}?name=${encodeURIComponent(page.name)}`
+      : "";
 
   const copyToClipboard = async (text: string) => {
     if (!text) return;

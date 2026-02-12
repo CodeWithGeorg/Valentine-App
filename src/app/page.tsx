@@ -50,10 +50,14 @@ export default function Home() {
 
   // Build share URLs using the origin we safely fetched
   const shareUrl =
-    createdPageId && origin ? `${origin}/p/${createdPageId}` : "";
+    createdPageId && origin
+      ? `${origin}/p/${createdPageId}?name=${encodeURIComponent(creatorName)}`
+      : "";
 
   const adminUrl =
-    createdPageId && origin ? `${origin}/admin/${createdPageId}` : "";
+    createdPageId && origin
+      ? `${origin}/admin/${createdPageId}?name=${encodeURIComponent(creatorName)}`
+      : "";
 
   const copyToClipboard = async (text: string) => {
     if (!text) return;
@@ -254,7 +258,7 @@ export default function Home() {
                       className="flex flex-col sm:flex-row gap-4 justify-center"
                     >
                       <motion.a
-                        href={`/p/${createdPageId}`}
+                        href={`/p/${createdPageId}?name=${encodeURIComponent(creatorName)}`}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
@@ -263,7 +267,7 @@ export default function Home() {
                         View Your Page
                       </motion.a>
                       <motion.a
-                        href={`/admin/${createdPageId}`}
+                        href={`/admin/${createdPageId}?name=${encodeURIComponent(creatorName)}`}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
