@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+import ValentinePopup from "@/components/ValentinePopup";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body
         className={`${inter.className} min-h-screen bg-gradient-to-br from-pink-100 via-red-50 to-pink-200`}
       >
+        <ValentinePopup />
         {children}
         <Analytics />
       </body>
