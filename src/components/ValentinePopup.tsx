@@ -11,7 +11,7 @@ export default function ValentinePopup() {
  
     setIsClient(true);
 
-   r
+   
     const now = new Date();
     const currentYear = now.getFullYear();
 
