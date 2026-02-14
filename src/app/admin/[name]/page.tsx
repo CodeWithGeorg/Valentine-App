@@ -15,7 +15,6 @@ interface AdminPageProps {
   params: Promise<{ name: string }> | { name: string };
 }
 
-// Type guard to check if params is a Promise
 function isPromise(obj: any): obj is Promise<{ name: string }> {
   return obj && typeof obj.then === "function";
 }
@@ -30,18 +29,18 @@ export default function AdminPage({ params }: AdminPageProps) {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Get the real origin once on the client and load page data
+
   useEffect(() => {
     const initParams = async () => {
       try {
         let name: string;
 
         if (isPromise(params)) {
-          // params is a Promise
+        
           const resolved = await params;
           name = resolved.name;
         } else {
-          // params is already an object
+      
           name = params.name;
         }
 
@@ -100,7 +99,7 @@ export default function AdminPage({ params }: AdminPageProps) {
     }
   };
 
-  // Share URL using name directly (no pageId needed)
+
   const shareUrl = origin && page ? `${origin}/p/${page.name}` : "";
 
   const copyToClipboard = async (text: string) => {
